@@ -47,3 +47,4 @@ bitcoin_close$search_pop <- search_term
 bitcoin_close$btc_scaled <- bitcoin_close$BTC.USD.Close / as.numeric(last(bitcoin_close$BTC.USD.Close))
 bitcoin_close$pop_scaled <- bitcoin_close$search_pop / as.numeric(last(bitcoin_close$search_pop))
 ggplot(data = bitcoin_close, aes(x = index(bitcoin_close))) + geom_line(aes(y = btc_scaled, color = "BTC")) + geom_line(aes(y = pop_scaled, color = "Search Popularity")) + labs(title = "Bitcoin Search Popularity and Price", x = "Date", y = "Relative Scale") + theme_minimal()
+# Perform non parametric test
