@@ -1,0 +1,49 @@
+library(quantmod)
+library(ggplot2)
+# Get data
+bitcoin <- read.csv(file = "bitcoin.csv.csv")
+buy_bitcoin <- read.csv(file = "buy_bitcoin.csv.csv")
+sell_bitcoin <- read.csv(file = "sell_bitcoin.csv.csv")
+search_term <- bitcoin
+getSymbols("BTC-USD", periodicity = "monthly")
+# View data
+str(`BTC-USD`)
+`BTC-USD`[is.na(`BTC-USD`)]
+plot(Cl(`BTC-USD`))
+str(search_term)
+search_term[is.na(search_term)]
+plot(search_term, type = "l")
+# Transform data into usable form, xts
+head(search_term)
+tail(search_term)
+start = as.Date("2004-02-01")
+end = as.Date("2023-08-01")
+dates <- seq(from = start, to = end, by = "months") -1
+search_term[search_term == "<1"] <- 0.5 # Some values are less than one - I will just append .5
+search_term <- search_term[-1,1]
+search_term <- xts(x = as.numeric(search_term), order.by = dates)
+colnames(search_term) <- "search_pop"
+tail(bitcoin)
+tail(search_term) # Check to ensure both end dates are the same - if not the original datasets dates are nonsequential.
+# View distributions & test for normality
+diff_btc <- diff(log10(Cl(`BTC-USD`)))
+diff_search <- diff(search_term)
+par(mfrow = c(1, 2))
+hist(diff_btc, main = "Distribution of Monthly Bitcoin Returns")
+qqnorm(diff_btc, main = "Bitcoin Price Normal Q-Q Plot")
+qqline(diff_btc, col = "red")
+shapiro.test(as.vector(diff_btc))
+par(mfrow = c(1, 2))
+hist(diff_search, main = "Distribution of Google Searches")
+qqnorm(diff_search, main = "Relative Searches Normal Q-Q Plot")
+qqline(diff_search, col = "red")
+shapiro.test(as.vector(diff_search))
+# Make data equal length and leave out of sample data
+bitcoin_close <- Cl(`BTC-USD`)["2014-10-01/2021-01-01"] # These are the monthly close prices- they are the actually the last day
+search_term <- search_term["2014-10-31/2021-01-31"]
+index(bitcoin_close) <- index(search_term)
+bitcoin_close$search_pop <- search_term
+# Visually assess relationship 
+bitcoin_close$btc_scaled <- bitcoin_close$BTC.USD.Close / as.numeric(last(bitcoin_close$BTC.USD.Close))
+bitcoin_close$pop_scaled <- bitcoin_close$search_pop / as.numeric(last(bitcoin_close$search_pop))
+ggplot(data = bitcoin_close, aes(x = index(bitcoin_close))) + geom_line(aes(y = btc_scaled, color = "BTC")) + geom_line(aes(y = pop_scaled, color = "Search Popularity")) + labs(title = "Bitcoin Search Popularity and Price", x = "Date", y = "Relative Scale") + theme_minimal()
